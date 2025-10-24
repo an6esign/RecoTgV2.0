@@ -1,0 +1,168 @@
+# =========================
+# 🐍 PYTHON
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+*.bak
+*.tmp
+*.log
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+
+# Build / distribution
+build/
+dist/
+develop-eggs/
+.eggs/
+pip-wheel-metadata/
+.tox/
+.wheelhouse/
+*.egg-info/
+MANIFEST
+*.coverage
+coverage.xml
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.cache/
+htmlcov/
+*.cover
+*.py,cover
+
+# =========================
+# 🧩 PROJECT CONFIG
+# =========================
+# Environment files (keep only example)
+.env
+.env.*
+!.env.example
+
+# Poetry / Pipenv / Requirements
+poetry.lock
+Pipfile
+Pipfile.lock
+__pypackages__/
+
+# =========================
+# 🐳 DOCKER
+# =========================
+*.pid
+*.sock
+*.tar
+*.log
+docker-compose.override.yml
+volumes/
+pgdata/
+redis-data/
+postgres-data/
+tmp/
+data/
+.docker/
+.dockerignore
+*.db
+
+# =========================
+# 🧠 IDE / OS / EDITORS
+# =========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# ⚛️ NODE / FRONTEND (Next.js)
+# =========================
+node_modules/
+.next/
+out/
+dist/
+public/build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+coverage/
+storybook-static/
+.eslintcache
+*.tsbuildinfo
+
+# =========================
+# 🧪 TESTS / CI
+# =========================
+test-results.xml
+pytestdebug.log
+nosetests.xml
+junit.xml
+.pytest_cache/
+__tests__/
+tests/__pycache__/
+tests/.pytest_cache/
+reports/
+logs/
+
+# =========================
+# 💾 DATASETS / MEDIA
+# =========================
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.zip
+*.tar.gz
+*.h5
+*.pkl
+*.db
+*.sqlite
+*.bak
+/data/
+datasets/
+uploads/
+media/
+storage/
+cache/
+
+# =========================
+# 🔧 TOOLS & HOOKS
+# =========================
+.pre-commit-config.yaml
+*.rej
+*.orig
+*.diff
+*.patch
+
+# =========================
+# 🧰 LINT / FORMAT / MISC
+# =========================
+.pytype/
+.pyre/
+.nox/
+.dmypy.json
+.ipynb_checkpoints/
