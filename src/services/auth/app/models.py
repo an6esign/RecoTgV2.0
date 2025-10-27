@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from uuid import uuid4
 from sqlalchemy import String, Boolean, DateTime, Enum, BigInteger
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,10 +19,10 @@ class User(Base):
     __tablename__ = "users"
 
     # Уникальный внутренний ID в нашей системе (UUID)
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[uuid4] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid4,
     )
 
     # Telegram user id (число). Важно: уникальный.

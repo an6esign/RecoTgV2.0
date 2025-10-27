@@ -1,5 +1,6 @@
 from urllib.parse import quote_plus
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
     POSTGRES_HOST: str
@@ -7,6 +8,12 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASS: str
+    
+    jwt_access_secret: str = Field(..., alias="JWT_ACCESS_SECRET")
+    jwt_refresh_secret: str = Field(..., alias="JWT_REFRESH_SECRET")
+
+    access_ttl_minutes: int = Field(..., alias="ACCESS_TTL_MINUTES")
+    refresh_ttl_days: int = Field(..., alias="REFRESH_TTL_DAYS")
     
     @property
     def DATABASE_URL(self) -> str:
@@ -21,6 +28,7 @@ class Settings(BaseSettings):
         return self.DATABASE_URL.replace("+psycopg2", "+asyncpg")
         
     model_config = SettingsConfigDict(
+        extra = "forbid",
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
