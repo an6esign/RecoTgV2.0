@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
     POSTGRES_USER: str
-    POSTGRES_PASS: str
+    POSTGRES_PASSWORD: str
     
     jwt_access_secret: str = Field(..., alias="JWT_ACCESS_SECRET")
     jwt_refresh_secret: str = Field(..., alias="JWT_REFRESH_SECRET")
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     @property
     def DATABASE_URL(self) -> str:
-        pwd = quote_plus(self.POSTGRES_PASS)
+        pwd = quote_plus(self.POSTGRES_PASSWORD)
         return (
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{pwd}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -28,8 +28,8 @@ class Settings(BaseSettings):
         return self.DATABASE_URL.replace("+psycopg2", "+asyncpg")
         
     model_config = SettingsConfigDict(
-        extra = "forbid",
-        env_file=".env",
+        extra = "ignore",
+        env_file="src/services/auth/.env",
         env_file_encoding="utf-8",
         case_sensitive=False,
     )

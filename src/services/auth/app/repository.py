@@ -12,7 +12,7 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> User | None:
     return result.scalar_one_or_none()
 
 
-async def get_user_by_telegram_id(db: AsyncSession, telegram_user_id: int) -> User | None:
+async def get_user_by_telegram_user_id(db: AsyncSession, telegram_user_id: int) -> User | None:
     result = await db.execute(
         select(User).where(User.telegram_user_id == telegram_user_id)
     )
@@ -34,7 +34,7 @@ async def create_user_from_telegram(db: AsyncSession, payload: TelegramRegisterR
     """
 
     # 1. ищем по telegram_user_id
-    user = await get_user_by_telegram_id(db, payload.telegram_user_id)
+    user = await get_user_by_telegram_user_id(db, payload.telegram_user_id)
     if user:
         return user
 
