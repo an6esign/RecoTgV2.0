@@ -1,8 +1,7 @@
 from aiogram import Router, types
 from aiogram.filters import Command
-import httpx
 
-from ..config import settings
+from src.services.bot.app.auth_client import auth_client
 
 router = Router(name="me")
 
@@ -11,27 +10,34 @@ router = Router(name="me")
 async def handle_me(message: types.Message):
     tg_id = message.from_user.id
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(f"{settings.AUTH_SERVICE_URL}/users/{tg_id}")
+    resp = await auth_client.get_user_info(tg_id)
 
     if resp.status_code == 200:
         data = resp.json()
-        await message.answer(
-            "Твои данные в системе:\n"
-            f"ID в базе: {data.get('id')}\n"
-            f"telegram_user_id: {data.get('telegram_user_id')}\n"
-            f"username: @{data.get('username')}\n"
-            f"phone: {data.get('phone')}\n"
-            f"is_active: {data.get('is_active')}"
-        )
+
+        phone_number = data.get("phone_number") or data.get("phone")
+        subscription_tier = data.get("subscription_tier")
+        subscription_expires_at = data.get("subscription_expires_at")
+
+        text_lines = [
+            "Твои данные в системе:",
+            f"📞 Номер: {phone_number}",
+            f"💳 Тариф: {subscription_tier}",
+            f"⏳ Оплачено до: {subscription_expires_at}",
+        ]
+
+        await message.answer("\n".join(text_lines))
+
     elif resp.status_code == 404:
-        # вот тут ты раньше видел "не зарегистрирован"
+        # пользователь не зарегистрирован
         await message.answer(
             "Ты не зарегистрирован 😶\n"
-            "Нажми /contact и отправь номер телефона, чтобы создать аккаунт."
+            "Нажми /reg и отправь номер телефона, чтобы создать аккаунт."
         )
+
     else:
+        # любая другая ошибка от сервиса
         await message.answer(
             "Сервис авторизации сейчас не отвечает 😔.\n"
-            "Попробуй чуть позже."
+            "Попробуй позже."
         )

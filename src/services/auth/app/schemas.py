@@ -8,13 +8,15 @@ class TelegramRegisterRequest(BaseModel):
     phone_number: str
 
 class UserPublic(BaseModel):
-    id: UUID 
+    id: UUID
     telegram_user_id: int
-    phone_number: str
-    subscription_tier: str
-    subscription_expires_at: Optional[datetime]
+    phone_number: Optional[str] = None
+    subscription_tier: Optional[str] = None
+    is_subscription_active: bool
+    subscription_expires_at: Optional[datetime] = None
     is_active: bool
     created_at: datetime
+    updated_at: datetime
 
     model_config = {
         "from_attributes": True
