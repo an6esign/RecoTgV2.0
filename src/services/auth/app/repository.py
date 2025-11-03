@@ -56,7 +56,7 @@ async def create_user_from_telegram(db: AsyncSession, payload: TelegramRegisterR
         id=uuid4(),
         telegram_user_id=payload.telegram_user_id,
         phone_number=payload.phone_number,
-        subscription_tier="FREE",
+        subscription_tier="free",
         is_subscription_active=False,  # см. твой лог, у тебя False
         subscription_expires_at=None,  # можешь поставить now+timedelta(days=TRIAL_DAYS)
         is_active=True,

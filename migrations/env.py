@@ -1,66 +1,69 @@
+from __future__ import annotations
+import os, sys, pathlib
 from logging.config import fileConfig
-import os
-import sys
-
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import create_async_engine
+
+# Позволяем импортировать src/*
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from src.services.auth.app.db_base import Base  # noqa
+from src.services.etl.app.db_base import Base  # noqa
+
+# ВАЖНО: импортируем модели всех сервисов, чтобы они были в metadata
+import src.services.auth.app.models  # noqa
+import src.services.etl.app.models.channel  # noqa
 
 config = context.config
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# >>> ВАЖНО: насильно добавить /app и /app/src в sys.path <<<
-# Это гарантирует, что внутри контейнера питон увидит модуль `src`
-project_root = "/app"
-src_root = "/app/src"
-
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-if src_root not in sys.path:
-    sys.path.insert(0, src_root)
-    
-from src.services.auth.app.db import Base
-from src.services.auth.app.settings import settings
-
-from src.services.auth.app import models 
+DATABASE_URL = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 
 target_metadata = Base.metadata
 
-def run_migrations_offline():
-    """
-    Offline режим: генерируем SQL без прямого подключения.
-    """
-    url = settings.DATABASE_URL  # sync URL для alembic
+def include_object(obj, name, type_, reflected, compare_to):
+    # Если хочешь мигрировать строго ограниченный набор таблиц:
+    # return name in {"users", "channels", "channel_stats"} if type_ == "table" else True
+    return True
+
+def run_migrations_offline() -> None:
     context.configure(
-        url=url,
+        url=DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         compare_type=True,
+        compare_server_default=True,
+        include_object=include_object,
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+        include_object=include_object,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
 
-def run_migrations_online():
-    from sqlalchemy import create_engine
-
-    connectable = create_engine(settings.DATABASE_URL)
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
-
+async def run_migrations_online() -> None:
+    connectable = create_async_engine(DATABASE_URL, poolclass=pool.NullPool)
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    import asyncio
+    asyncio.run(run_migrations_online())

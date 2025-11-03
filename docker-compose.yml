@@ -26,6 +26,27 @@ services:
     networks:
       - recotg_net
 
+  etl:
+    build:
+      context: .
+      dockerfile: ./src/services/etl/Dockerfile
+    container_name: recotg_etl
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./src/services/etl:/app
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8002:8000"
+    networks:
+      - recotg_net
+
   recotg_auth:
     build:
       context: .
@@ -64,6 +85,22 @@ services:
       python -m src.services.bot.app.main
     networks:
       - recotg_net
+
+  migrations:
+      build:
+        context: .
+        dockerfile: migrations.Dockerfile
+      container_name: recotg_migrations
+      depends_on:
+        - db
+      environment:
+        DATABASE_URL: postgresql+asyncpg://recotg:recopassword@recotg_db:5432/recotg_db
+      volumes:
+        - ./alembic.ini:/app/alembic.ini
+        - ./migrations:/app/migrations
+        - ./src:/app/src
+      networks:
+        - recotg_net
 
 volumes:
   recotg_db_data:

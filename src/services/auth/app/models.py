@@ -1,12 +1,13 @@
 import uuid
+import enum
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy import String, Boolean, DateTime, Enum, BigInteger
+
+from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, BigInteger, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-import enum
 
-from src.services.auth.app.db import Base
+from .db_base import Base
 
 
 class SubscriptionTier(str, enum.Enum):
@@ -15,70 +16,33 @@ class SubscriptionTier(str, enum.Enum):
     PREMIUM = "premium"
 
 
+# ✅ ключевая строка: заставляем хранить/отправлять value ('free'/'standard'/'premium')
+subscription_enum = SAEnum(
+    SubscriptionTier,
+    name="subscriptiontier",
+    values_callable=lambda cls: [e.value for e in cls],
+)
+
+
 class User(Base):
     __tablename__ = "users"
 
-    # Уникальный внутренний ID в нашей системе (UUID)
-    id: Mapped[uuid4] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid4,
-    )
+    # лучше явный тип
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
-    # Telegram user id (число). Важно: уникальный.
-    telegram_user_id: Mapped[int] = mapped_column(
-        BigInteger,        # у телеграма id может быть большой int
-        unique=True,
-        nullable=False,
-        index=True,
-    )
+    telegram_user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
+    phone_number: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True, index=True)
 
-    # Номер телефона пользователя (в международном формате, типа +49123456789)
-    phone_number: Mapped[str | None] = mapped_column(
-        String(length=32),
-        unique=True,
-        nullable=True,
-        index=True,
-    )
-
-    # Подписка: free | standard | premium
+    # ✅ используем subscription_enum
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
-        Enum(SubscriptionTier, name="subscriptiontier"),
+        subscription_enum,
         nullable=False,
-        default=SubscriptionTier.FREE,
+        default=SubscriptionTier.FREE,          # python default
     )
 
-    # Подписка активна?
-    is_subscription_active: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-    )
+    is_subscription_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    # Когда эта подписка истекает
-    subscription_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-    )
-
-    # Аккаунт вообще активен (можно ли пользоваться сервисом)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=True,
-    )
-
-
-    # Аудитные поля
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.utcnow,
-    )
-
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
