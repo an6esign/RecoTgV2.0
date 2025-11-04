@@ -30,6 +30,7 @@ RUN poetry config virtualenvs.create false
 # RUN poetry install --no-interaction --no-ansi --only main --no-root
 # Или установить всё (по умолчанию main + optional groups, без dev)
 RUN poetry install --no-interaction --no-ansi --no-root
+RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy asyncpg python-multipart
 
 # 7) Копируем исходники проекта
 COPY . .
