@@ -3,11 +3,15 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.pool import NullPool
 
 from .db_base import Base
+from .config import settings 
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL not set")
-ASYNC_DATABASE_URL = DATABASE_URL if "+asyncpg" in DATABASE_URL else DATABASE_URL.replace("+psycopg2", "+asyncpg")
+DATABASE_URL = settings.DATABASE_URL
+
+# Поддержим оба варианта драйвера
+ASYNC_DATABASE_URL = (
+    DATABASE_URL if "+asyncpg" in DATABASE_URL
+    else DATABASE_URL.replace("+psycopg2", "+asyncpg")
+)
 
 engine = create_async_engine(
     ASYNC_DATABASE_URL,

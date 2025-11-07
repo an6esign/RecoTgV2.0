@@ -14,7 +14,7 @@ services:
       - "5432:5432"
     networks:
       - recotg_net
-    
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: recotg_pgadmin
@@ -26,46 +26,57 @@ services:
     networks:
       - recotg_net
 
-  etl:
-    build:
-      context: .
-      dockerfile: ./src/services/etl/Dockerfile
-    container_name: recotg_etl
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./src/services/etl:/app
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    depends_on:
-      - db
-    env_file:
-      - .env
-    ports:
-      - "8002:8000"
-    networks:
-      - recotg_net
-
   recotg_auth:
     build:
       context: .
       dockerfile: ./src/services/auth/Dockerfile
     container_name: recotg_auth
     restart: unless-stopped
-    depends_on:
-      - db
+    working_dir: /app
     env_file: .env
     environment:
-      # эти переменные будут видны внутри контейнера auth
+      PYTHONPATH: /app:/app/src
       POSTGRES_DB: ${POSTGRES_DB}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+    volumes:
+      - .:/app
     command: >
       uvicorn src.services.auth.app.main:app
       --host 0.0.0.0
       --port 8000
     ports:
       - "8001:8000"
+    depends_on:
+      - db
+    networks:
+      - recotg_net
+
+  etl:
+    build:
+      context: .
+      dockerfile: ./src/services/etl/Dockerfile
+    container_name: recotg_etl
+    restart: unless-stopped
+    working_dir: /app
+    env_file: .env
+    environment:
+      PYTHONPATH: /app:/app/src:/app/src/services/etl
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - .:/app
+      # сессия Telethon будет сохраняться на хосте
+      - ./secrets:/app/secrets
+    command: >
+      uvicorn src.services.etl.app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
     networks:
       - recotg_net
 
@@ -75,35 +86,37 @@ services:
       dockerfile: ./src/services/bot/Dockerfile
     container_name: recotg_bot
     restart: unless-stopped
-    depends_on:
-      - recotg_auth
+    working_dir: /app
     env_file: .env
     environment:
+      PYTHONPATH: /app:/app/src
       BOT_TOKEN: ${BOT_TOKEN}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
-    command: >
-      python -m src.services.bot.app.main
+    volumes:
+      - .:/app
+    command: ["python", "-m", "src.services.bot.app.main"]
+    depends_on:
+      - recotg_auth
     networks:
       - recotg_net
 
   migrations:
-      build:
-        context: .
-        dockerfile: migrations.Dockerfile
-      container_name: recotg_migrations
-      depends_on:
-        - db
-      environment:
-        DATABASE_URL: postgresql+asyncpg://recotg:recopassword@recotg_db:5432/recotg_db
-      volumes:
-        - ./alembic.ini:/app/alembic.ini
-        - ./migrations:/app/migrations
-        - ./src:/app/src
-      networks:
-        - recotg_net
+    build:
+      context: .
+      dockerfile: migrations.Dockerfile
+    container_name: recotg_migrations
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app:/app/src
+      DATABASE_URL: postgresql+asyncpg://recotg:recopassword@recotg_db:5432/recotg_db
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    networks:
+      - recotg_net
 
 volumes:
-  recotg_db_data:
   recotg_pgdata:
 
 networks:

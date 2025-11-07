@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 ALGORITHM = "HS256"
 
-# читаем из окружения (которое docker-compose пробросит из .env)
 JWT_ACCESS_SECRET = os.getenv("JWT_ACCESS_SECRET", "dev_access_secret_fallback")
 JWT_REFRESH_SECRET = os.getenv("JWT_REFRESH_SECRET", "dev_refresh_secret_fallback")
 

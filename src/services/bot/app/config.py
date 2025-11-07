@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         extra="ignore",
-        env_file=".env",            # можешь поменять путь если нужно
+        env_file=".env",
         env_file_encoding="utf-8",
     )
 

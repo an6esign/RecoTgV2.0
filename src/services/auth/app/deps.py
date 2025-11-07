@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import jwt  # PyJWT
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .settings import settings
@@ -16,7 +16,7 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ):
 
-    token = creds.credentials  # это строка токена без префикса "Bearer "
+    token = creds.credentials
 
     # Декодим токен
     try:
@@ -36,7 +36,6 @@ async def get_current_user(
             detail="Invalid token",
         )
 
-    # sub должен содержать id пользователя, который мы клали в create_token_pair
     sub_raw = payload.get("sub")
     if sub_raw is None:
         raise HTTPException(
@@ -44,7 +43,6 @@ async def get_current_user(
             detail="Invalid token",
         )
 
-    # приводим sub к UUID, потому что у нас users.id это UUID
     try:
         user_id = UUID(sub_raw)
     except ValueError:
@@ -53,7 +51,6 @@ async def get_current_user(
             detail="Invalid token subject",
         )
 
-    # достаём юзера из базы
     user = await repository.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(

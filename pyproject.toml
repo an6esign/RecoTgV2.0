@@ -10,6 +10,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
+httpx = "^0.27"
 
 # --- веб и сервисы ---
 fastapi = "^0.115.0"
@@ -37,6 +38,18 @@ greenlet = "^3.2.4"
 pandas = "^2.3.3"
 python-multipart = "^0.0.20"
 
+# --- Группа зависимостей для ETL (Telethon + планировщик + ретраи) ---
+telethon = "^1.41.2"
+[tool.poetry.group.etl]
+optional = true
+
+[tool.poetry.group.etl.dependencies]
+telethon = "^1.36.0"
+apscheduler = "^3.10.4"
+tenacity = "^8.3.0"        # экспоненциальные ретраи обёрткой
+# логирование по желанию; можно включить позже
+# structlog = "^24.1.0"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 httpx = "^0.27.0"
@@ -46,6 +59,7 @@ black = "^24.0.0"
 [tool.poetry.scripts]
 # Потом можно будет сделать shorthands типа "poetry run auth" и "poetry run bot"
 # но пока оставим пусто.
+# Для ETL мы запускаем модуль напрямую: python -m services.etl.scheduler
 
 [build-system]
 requires = ["poetry-core"]

@@ -17,7 +17,6 @@ async def handle_start(message: types.Message):
         resp = await client.get(f"{settings.AUTH_SERVICE_URL}/me/{tg_id}")
 
     if resp.status_code == 200:
-        # уже есть в базе
         await message.answer(
             "Вы уже зарегистрированы ✅\n\n"
             "Команды:\n"
@@ -26,7 +25,6 @@ async def handle_start(message: types.Message):
         )
         return
     if resp.status_code == 404:
-    # если не нашли (404), предлагаем регистрацию
         kb = ReplyKeyboardMarkup(
             keyboard=[
                 [KeyboardButton(text="Поделиться номером", request_contact=True)]
@@ -49,7 +47,6 @@ async def handle_start(message: types.Message):
     
 @router.message(F.contact)
 async def got_contact(message: types.Message):
-    # Проверяем, что это контакт самого пользователя
     if not message.contact or message.contact.user_id != message.from_user.id:
         await message.answer("Нужно отправить СВОЙ номер через кнопку «Поделиться номером».")
         return

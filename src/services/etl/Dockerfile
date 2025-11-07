@@ -1,44 +1,35 @@
-# 1) Базовый образ
+# syntax=docker/dockerfile:1.6
 FROM python:3.11-slim
 
-# 2) Базовые настройки
-ENV PIP_NO_CACHE_DIR=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=1.8.3
+ENV POETRY_VERSION=1.8.3 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=10 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# 3) Системные зависимости (для pandas, psycopg и т.д.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# 4) Poetry
-RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
+RUN pip install -U pip && pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /app
+COPY pyproject.toml poetry.lock ./
 
-# 5) Кэшируем слои с зависимостями
-# Сначала копируем только манифесты, чтобы Poetry мог поставить зависимости и закешировать слой
-COPY pyproject.toml poetry.lock* ./
+ENV PYTHONPATH=/app
 
-# 6) Не создаём виртуалки внутри контейнера — всё ставим в системный site-packages
-RUN poetry config virtualenvs.create false
+RUN --mount=type=cache,target=/root/.cache/pip \
+    bash -euxo pipefail -c '\
+    for i in {1..5}; do \
+    pip install --only-binary=:all: numpy==2.3.4 pandas==2.3.3 && exit 0; \
+    echo "warm-up pip failed, retry $i"; sleep $((i*7)); \
+    done; exit 1'
 
-# Если у тебя зависимости разбиты по группам, можешь оставить только runtime:
-# RUN poetry install --no-interaction --no-ansi --only main --no-root
-# Или установить всё (по умолчанию main + optional groups, без dev)
-RUN poetry install --no-interaction --no-ansi --no-root
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy asyncpg python-multipart
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pypoetry \
+    bash -euxo pipefail -c '\
+    poetry config virtualenvs.create false; \
+    for i in {1..5}; do \
+    poetry install --no-interaction --no-ansi --no-root --only main && exit 0; \
+    echo "poetry install failed, retry $i"; sleep $((i*7)); \
+    done; exit 1'
 
-# 7) Копируем исходники проекта
 COPY . .
-
-# 8) Если твой проект — пакет (есть src/ и т.п.), установи и сам проект:
-# RUN poetry install --no-interaction --no-ansi
-
-# 9) Команда запуска (поправь под свой модуль)
-# Важно: теперь uvicorn есть в PATH, т.к. мы не используем отдельную venv
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

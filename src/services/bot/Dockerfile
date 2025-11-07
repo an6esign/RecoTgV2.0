@@ -1,20 +1,30 @@
-# Используем Python 3.11
+# syntax=docker/dockerfile:1.6
 FROM python:3.11-slim
 
-# Рабочая директория внутри контейнера
+ENV PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=10 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VERSION=1.8.3
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip && pip install "poetry==$POETRY_VERSION"
+
 WORKDIR /app
 
-# Скопировать файлы зависимостей (poetry/requirements)
-COPY pyproject.toml poetry.lock* requirements.txt* /app/
+COPY pyproject.toml poetry.lock ./
 
-# Установить зависимости
-RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-root
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pypoetry \
+    bash -euxo pipefail -c '\
+    poetry config virtualenvs.create false; \
+    for i in {1..5}; do \
+    poetry install --no-root --only main --no-interaction && exit 0; \
+    echo "poetry install failed, retry $i"; sleep $((i*5)); \
+    done; exit 1'
 
-# Скопировать исходники проекта
-COPY src /app/src
+COPY . .
 
-# Чтобы Python видел модуль src
-ENV PYTHONPATH=/app
-
-# Запуск бота
 CMD ["python", "-m", "src.services.bot.app.main"]

@@ -3,7 +3,6 @@ from .config import settings
 
 class AuthClient:
     def __init__(self, base_url: str):
-        # срезаем последний "/" чтобы потом руками собирать эндпоинты
         self.base_url = base_url.rstrip("/")
 
     async def create_user(self, telegram_user_id: int, phone_number: str | None) -> httpx.Response:

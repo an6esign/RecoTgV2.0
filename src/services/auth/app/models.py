@@ -16,7 +16,6 @@ class SubscriptionTier(str, enum.Enum):
     PREMIUM = "premium"
 
 
-# ✅ ключевая строка: заставляем хранить/отправлять value ('free'/'standard'/'premium')
 subscription_enum = SAEnum(
     SubscriptionTier,
     name="subscriptiontier",
@@ -27,17 +26,15 @@ subscription_enum = SAEnum(
 class User(Base):
     __tablename__ = "users"
 
-    # лучше явный тип
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     telegram_user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
     phone_number: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True, index=True)
 
-    # ✅ используем subscription_enum
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
         subscription_enum,
         nullable=False,
-        default=SubscriptionTier.FREE,          # python default
+        default=SubscriptionTier.FREE,
     )
 
     is_subscription_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

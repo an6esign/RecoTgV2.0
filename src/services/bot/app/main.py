@@ -12,7 +12,6 @@ from .handlers import routers
 dp = Dispatcher()
 
 async def main():
-    # просто чтобы видеть, что мы грузим правильные env
     print("BOT_TOKEN len:", len(settings.BOT_TOKEN))
     print("AUTH_SERVICE_URL:", settings.AUTH_SERVICE_URL)
 
@@ -24,7 +23,6 @@ async def main():
     for router in routers:
         dp.include_router(router)
 
-    # здесь запускаем лонг-поллинг
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
